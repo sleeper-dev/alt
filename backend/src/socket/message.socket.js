@@ -1,3 +1,4 @@
+import { handleCommand } from "../modules/commands/commandHandler.js";
 import { Message } from "../modules/messages/messages.model.js";
 import { Room } from "../modules/rooms/room.model.js";
 
@@ -27,6 +28,14 @@ export const registerMessageHandlers = (io, socket) => {
     } catch (err) {
       console.error(err);
     }
+  });
+
+  socket.on("command:send", async ({ command }) => {
+    await handleCommand({
+      socket,
+      io,
+      rawCommand: command,
+    });
   });
 };
 

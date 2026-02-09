@@ -90,7 +90,7 @@ export const Messages = ({ activeRoom }) => {
             return (
               <div
                 key={msg._id}
-                className="text-center text-xs text-gray-500 italic"
+                className="text-center text-xs whitespace-pre-line text-gray-500 italic"
               >
                 {msg.content}
               </div>

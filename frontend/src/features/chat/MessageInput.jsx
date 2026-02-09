@@ -26,10 +26,18 @@ export const MessageInput = ({ activeRoom }) => {
     e.preventDefault();
     if (!socket || !activeRoom || !text.trim()) return;
 
-    socket.emit("message:send", {
-      roomName: activeRoom.name,
-      content: text,
-    });
+    const trimmed = text.trim();
+
+    if (trimmed.startsWith("/")) {
+      socket.emit("command:send", {
+        command: trimmed,
+      });
+    } else {
+      socket.emit("message:send", {
+        roomName: activeRoom.name,
+        content: trimmed,
+      });
+    }
 
     if (isTypingRef.current) {
       socket.emit("typing:stop", { roomName: activeRoom.name });

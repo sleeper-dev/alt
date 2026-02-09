@@ -55,6 +55,12 @@ export const SocketProvider = ({ children }) => {
       }));
     };
 
+    const handleCommandError = (message) => {
+      toast.error(message);
+    };
+
+    newSocket.on("command:error", handleCommandError);
+
     newSocket.on("typing:start", handleTypingStart);
     newSocket.on("typing:stop", handleTypingStop);
 
@@ -63,6 +69,7 @@ export const SocketProvider = ({ children }) => {
       newSocket.off("room:users", handleRoomUsers);
       newSocket.off("typing:start", handleTypingStart);
       newSocket.off("typing:stop", handleTypingStop);
+      newSocket.off("command:error", handleCommandError);
       newSocket.disconnect();
       setSocket(null);
       setOnlineUsers([]);
