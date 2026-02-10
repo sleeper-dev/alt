@@ -18,6 +18,10 @@ export const registerRoomHandlers = (io, socket) => {
         return socket.emit("room:join:error", "Room not found");
       }
 
+      if (room.bannedUsers.some((id) => id.equals(socket.user._id))) {
+        return socket.emit("room:join:error", "You are banned from this room");
+      }
+
       const isOwner = socket.user._id.equals(room.ownerId);
 
       if (room.isPrivate && !isOwner) {

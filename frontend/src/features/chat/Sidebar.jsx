@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAuth } from "../auth/auth.context.jsx";
 import { Modal } from "../../shared/components/Modal.jsx";
 import { useSocket } from "../socket/SocketProvider.jsx";
-import toast from "react-hot-toast";
 
 export const Sidebar = ({
   rooms,
@@ -30,7 +29,7 @@ export const Sidebar = ({
   };
 
   const joinRoom = (roomName, password = "") => {
-    if (!socket) return;
+    if (!socket || activeRoom?.name === roomName) return;
 
     socket.emit("room:join", { roomName, password });
 
@@ -40,10 +39,6 @@ export const Sidebar = ({
 
       setPasswordModal({ isOpen: false, room: null });
       setPassword("");
-    });
-
-    socket.once("room:join:error", (msg) => {
-      toast.error(msg);
     });
   };
 
