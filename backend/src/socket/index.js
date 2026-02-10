@@ -8,6 +8,12 @@ import {
 } from "./message.socket.js";
 import { registerUserHandlers } from "./user.socket.js";
 import { leaveRoom } from "../modules/rooms/room.helper.js";
+import {
+  addUserConnection,
+  removeUserConnection,
+  removeUserFromRoom,
+  roomPresence,
+} from "./presence.js";
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
@@ -39,7 +45,7 @@ export const initSocket = (httpServer) => {
     }
   });
 
-  io.on("connection", (socket) => {
+  io.on("connection", async (socket) => {
     registerRoomHandlers(io, socket);
     registerMessageHandlers(io, socket);
     registerTypingHandlers(io, socket);
@@ -47,7 +53,23 @@ export const initSocket = (httpServer) => {
 
     console.log(`${socket.user.username} connected`);
 
+    const userId = socket.user._id.toString();
+
+    addUserConnection(userId, socket.user.username, socket.id);
+
+    await User.findByIdAndUpdate(userId, {
+      status: "online",
+    });
+
     socket.on("disconnect", async () => {
+      removeUserConnection(userId, socket.id);
+
+      for (const [roomName, users] of roomPresence.entries()) {
+        if (users.has(userId)) {
+          removeUserFromRoom(roomName, userId);
+        }
+      }
+
       if (socket.currentRoom) {
         await leaveRoom(io, socket, socket.currentRoom);
       }

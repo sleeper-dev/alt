@@ -76,8 +76,6 @@ export const login = async (req, res, next) => {
     const refreshToken = signRefreshToken(user._id);
 
     user.refreshToken = refreshToken;
-    user.status = "online";
-    user.lastSeen = null;
 
     await user.save();
 
@@ -103,8 +101,6 @@ export const logout = async (req, res, next) => {
 
       if (user) {
         user.refreshToken = null;
-        user.status = "offline";
-        user.lastSeen = new Date();
         await user.save();
       }
     }

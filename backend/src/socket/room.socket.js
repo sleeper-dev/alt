@@ -1,6 +1,7 @@
 import { emitRoomUsers, leaveRoom } from "../modules/rooms/room.helper.js";
 import { Room } from "../modules/rooms/room.model.js";
 import bcrypt from "bcrypt";
+import { addUserToRoom, roomPresence } from "./presence.js";
 
 export const registerRoomHandlers = (io, socket) => {
   socket.on("room:join", async ({ roomName, password }) => {
@@ -8,6 +9,7 @@ export const registerRoomHandlers = (io, socket) => {
       if (!roomName) return;
 
       const normalized = roomName.toLowerCase().trim();
+      const userId = socket.user._id.toString();
 
       const room = await Room.findOne({
         name: normalized,
@@ -41,14 +43,21 @@ export const registerRoomHandlers = (io, socket) => {
 
       socket.join(normalized);
       socket.currentRoom = normalized;
-      await emitRoomUsers(io, normalized);
 
-      socket.to(normalized).emit("system:message", {
-        roomName: normalized,
-        content: `${socket.user.username} has joined the room`,
-        createdAt: new Date(),
-        system: true,
-      });
+      const wasAlreadyInRoom = roomPresence.get(normalized)?.has(userId);
+
+      addUserToRoom(normalized, userId);
+
+      if (!wasAlreadyInRoom) {
+        socket.to(normalized).emit("system:message", {
+          roomName: normalized,
+          content: `${socket.user.username} has joined the room`,
+          createdAt: new Date(),
+          system: true,
+        });
+      }
+
+      await emitRoomUsers(io, normalized);
 
       socket.emit("room:joined", { room: normalized });
     } catch (err) {
@@ -60,7 +69,6 @@ export const registerRoomHandlers = (io, socket) => {
   socket.on("room:leave", async () => {
     try {
       if (!socket.currentRoom) return;
-
       await leaveRoom(io, socket, socket.currentRoom);
     } catch (err) {
       console.error(err);
