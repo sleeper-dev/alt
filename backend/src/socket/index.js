@@ -28,7 +28,7 @@ export const initSocket = (httpServer) => {
       const token = socket.handshake.auth?.token;
 
       if (!token) {
-        return next(new Error("Authentication error"));
+        return next(new Error("NO_TOKEN"));
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -41,7 +41,7 @@ export const initSocket = (httpServer) => {
       socket.user = user;
       next();
     } catch (err) {
-      next(new Error("Invalid token"));
+      next(new Error("AUTH_ERROR"));
     }
   });
 

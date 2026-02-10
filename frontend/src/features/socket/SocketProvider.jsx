@@ -3,11 +3,12 @@ import { useAuth } from "../auth/auth.context.jsx";
 import { useChat } from "../chat/useChat.js";
 import { io } from "socket.io-client";
 import toast from "react-hot-toast";
+import { api } from "../../shared/utils/axios.js";
 
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -24,6 +25,25 @@ export const SocketProvider = ({ children }) => {
     });
 
     setSocket(newSocket);
+
+    newSocket.on("connect_error", async (err) => {
+      if (err.message === "AUTH_ERROR" || err.message === "NO_TOKEN") {
+        try {
+          const { data } = await api.post("/auth/refresh");
+
+          const newToken = data.accessToken;
+          localStorage.setItem("accessToken", newToken);
+
+          newSocket.auth = { token: newToken };
+          newSocket.connect();
+        } catch (refreshErr) {
+          console.error("Refresh failed", refreshErr);
+
+          localStorage.removeItem("accessToken");
+          await logout();
+        }
+      }
+    });
 
     newSocket.on("connect", () => setIsConnected(true));
     newSocket.on("disconnect", () => setIsConnected(false));
