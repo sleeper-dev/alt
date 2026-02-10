@@ -62,21 +62,6 @@ export const SocketProvider = ({ children }) => {
       toast.error(message);
     };
 
-    const handleBanned = ({ roomName }) => {
-      toast(`You were banned from #${roomName}`, {
-        style: {
-          background: "#fff9f1",
-          color: "#000",
-        },
-        icon: "⚠️",
-      });
-
-      if (activeRoom?.name === roomName) {
-        socket.emit("room:leave", { roomName });
-      }
-    };
-    newSocket.on("room:banned", handleBanned);
-
     const handleUnbanned = ({ roomName }) => {
       toast(`You were unbanned in #${roomName}`);
     };
@@ -92,7 +77,6 @@ export const SocketProvider = ({ children }) => {
       newSocket.off("typing:start", handleTypingStart);
       newSocket.off("typing:stop", handleTypingStop);
       newSocket.off("command:error", handleCommandError);
-      newSocket.off("room:banned", handleBanned);
       newSocket.off("room:unbanned", handleUnbanned);
       newSocket.disconnect();
       setSocket(null);

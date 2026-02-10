@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../auth/auth.context.jsx";
 import { Modal } from "../../shared/components/Modal.jsx";
 import { useSocket } from "../socket/SocketProvider.jsx";
+import toast from "react-hot-toast";
 
 export const Sidebar = ({
   rooms,
@@ -41,6 +42,31 @@ export const Sidebar = ({
       setPassword("");
     });
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleBanned = ({ roomName }) => {
+      toast(`You were banned from #${roomName}`, {
+        style: {
+          background: "#fff9f1",
+          color: "#000",
+        },
+        icon: "⚠️",
+      });
+
+      if (activeRoom?.name === roomName) {
+        socket.emit("room:leave", { roomName });
+
+        setActiveRoom(null);
+      }
+    };
+    socket.on("room:banned", handleBanned);
+
+    return () => {
+      socket.off("room:banned", handleBanned);
+    };
+  }, [socket, activeRoom, setActiveRoom]);
 
   return (
     <aside className="flex w-64 flex-col border-r-4 border-black/90 p-4">
