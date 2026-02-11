@@ -37,7 +37,11 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (originalRequest._retry) {
+    if (
+      originalRequest._retry ||
+      originalRequest.url.includes("/auth/login") ||
+      originalRequest.url.includes("/auth/refresh")
+    ) {
       return Promise.reject(error);
     }
 
@@ -61,13 +65,11 @@ api.interceptors.response.use(
       );
 
       const newToken = res.data.accessToken;
-
       localStorage.setItem("accessToken", newToken);
 
       processQueue(null, newToken);
 
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
       return api(originalRequest);
     } catch (err) {
       processQueue(err, null);
