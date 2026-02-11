@@ -63,6 +63,10 @@ export const Sidebar = ({
     };
     socket.on("room:banned", handleBanned);
 
+    socket.on("room:left", ({ room }) => {
+      setActiveRoom((prev) => (prev?.name === room ? null : prev));
+    });
+
     return () => {
       socket.off("room:banned", handleBanned);
     };
