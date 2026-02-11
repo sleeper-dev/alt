@@ -67,10 +67,19 @@ export const Sidebar = ({
       setActiveRoom((prev) => (prev?.name === room ? null : prev));
     });
 
+    socket.on("room:deleted", ({ roomName }) => {
+      // setRooms((prev) => prev.filter((r) => r.name !== roomName));
+
+      setActiveRoom((prev) => (prev?.name === roomName ? null : prev));
+
+      toast(`Room ${roomName} deleted`);
+    });
+
     return () => {
       socket.off("room:banned", handleBanned);
+      socket.off("room:deleted");
     };
-  }, [socket, activeRoom, setActiveRoom]);
+  }, [socket]);
 
   return (
     <aside className="flex w-64 flex-col border-r-4 border-black/90 p-4">
