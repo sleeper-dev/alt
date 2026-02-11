@@ -1,6 +1,7 @@
 import { Navigate } from "react-router";
 import { useAuth } from "../features/auth/auth.context.jsx";
 import { SocketProvider } from "../features/socket/SocketProvider.jsx";
+import { ChatProvider } from "../features/chat/chat.context.jsx";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -17,7 +18,11 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <SocketProvider>{children}</SocketProvider>;
+  return (
+    <ChatProvider>
+      <SocketProvider>{children}</SocketProvider>
+    </ChatProvider>
+  );
 };
 
 export default ProtectedRoute;

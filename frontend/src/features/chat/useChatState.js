@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createRoom, getRooms } from "../rooms/rooms.api.js";
 import toast from "react-hot-toast";
 
-export const useChat = () => {
+export const useChatState = () => {
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
   const [loadingRooms, setLoadingRooms] = useState(true);
@@ -64,6 +64,7 @@ export const useChat = () => {
 
   return {
     rooms,
+    setRooms,
     activeRoom,
     setActiveRoom,
     loadingRooms,

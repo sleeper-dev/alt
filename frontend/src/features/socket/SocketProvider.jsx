@@ -1,21 +1,27 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/auth.context.jsx";
-import { useChat } from "../chat/useChat.js";
 import { io } from "socket.io-client";
 import toast from "react-hot-toast";
 import { api } from "../../shared/utils/axios.js";
+import { useChat } from "../chat/chat.context.jsx";
 
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
   const { user, logout } = useAuth();
+  const { activeRoom, setActiveRoom, setRooms } = useChat();
+
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [roomUsers, setRoomUsers] = useState({});
   const [typingUsers, setTypingUsers] = useState({});
 
-  const { activeRoom } = useChat();
+  const activeRoomRef = useRef(activeRoom);
+
+  useEffect(() => {
+    activeRoomRef.current = activeRoom;
+  }, [activeRoom]);
 
   useEffect(() => {
     if (!user) return;
@@ -37,8 +43,6 @@ export const SocketProvider = ({ children }) => {
           newSocket.auth = { token: newToken };
           newSocket.connect();
         } catch (refreshErr) {
-          console.error("Refresh failed", refreshErr);
-
           localStorage.removeItem("accessToken");
           await logout();
         }
@@ -50,61 +54,72 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on("room:join:error", (msg) => toast.error(msg));
 
-    const handleOnlineUsers = (users) => setOnlineUsers(users);
-    newSocket.on("onlineUsers", handleOnlineUsers);
+    newSocket.on("onlineUsers", setOnlineUsers);
 
-    const handleRoomUsers = ({ roomName, users }) => {
+    newSocket.on("room:users", ({ roomName, users }) => {
       setRoomUsers((prev) => ({
         ...prev,
         [roomName]: users,
       }));
-    };
+    });
 
-    newSocket.on("room:users", handleRoomUsers);
-
-    const handleTypingStart = ({ roomName, userId, username }) => {
+    newSocket.on("typing:start", ({ roomName, userId, username }) => {
       setTypingUsers((prev) => ({
         ...prev,
         [roomName]: prev[roomName]?.some((u) => u.userId === userId)
           ? prev[roomName]
           : [...(prev[roomName] || []), { userId, username }],
       }));
-    };
+    });
 
-    const handleTypingStop = ({ roomName, userId }) => {
+    newSocket.on("typing:stop", ({ roomName, userId }) => {
       setTypingUsers((prev) => ({
         ...prev,
         [roomName]: (prev[roomName] || []).filter((u) => u.userId !== userId),
       }));
-    };
+    });
 
-    const handleCommandError = (message) => {
-      toast.error(message);
-    };
+    newSocket.on("room:left", ({ room }) => {
+      if (activeRoomRef.current?.name === room) {
+        setActiveRoom(null);
+      }
+    });
 
-    const handleUnbanned = ({ roomName }) => {
+    newSocket.on("room:deleted", ({ roomName }) => {
+      setRooms((prev) => prev.filter((r) => r.name !== roomName));
+
+      if (activeRoomRef.current?.name === roomName) {
+        setActiveRoom(null);
+      }
+
+      toast(`Room ${roomName} deleted`);
+    });
+
+    newSocket.on("room:banned", ({ roomName }) => {
+      toast(`You were banned from #${roomName}`, {
+        icon: "⚠️",
+      });
+
+      if (activeRoomRef.current?.name === roomName) {
+        newSocket.emit("room:leave");
+        setActiveRoom(null);
+      }
+    });
+
+    newSocket.on("room:unbanned", ({ roomName }) => {
       toast(`You were unbanned in #${roomName}`);
-    };
-    newSocket.on("room:unbanned", handleUnbanned);
+    });
 
-    newSocket.on("command:error", handleCommandError);
-    newSocket.on("typing:start", handleTypingStart);
-    newSocket.on("typing:stop", handleTypingStop);
+    newSocket.on("command:error", (msg) => toast.error(msg));
 
     return () => {
-      newSocket.off("onlineUsers", handleOnlineUsers);
-      newSocket.off("room:users", handleRoomUsers);
-      newSocket.off("typing:start", handleTypingStart);
-      newSocket.off("typing:stop", handleTypingStop);
-      newSocket.off("command:error", handleCommandError);
-      newSocket.off("room:unbanned", handleUnbanned);
       newSocket.disconnect();
       setSocket(null);
       setOnlineUsers([]);
       setRoomUsers({});
       setTypingUsers({});
     };
-  }, [user, activeRoom]);
+  }, [user]);
 
   return (
     <SocketContext.Provider

@@ -1,7 +1,7 @@
-import { useChat } from "./useChat.js";
 import { ChatWindow } from "./ChatWindow.jsx";
 import { Sidebar } from "./Sidebar.jsx";
 import { Modal } from "../../shared/components/Modal.jsx";
+import { useChat } from "./chat.context.jsx";
 
 export const ChatLayout = () => {
   const chat = useChat();
