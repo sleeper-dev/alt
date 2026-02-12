@@ -106,6 +106,14 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
+    newSocket.on("room:kicked", ({ roomName }) => {
+      toast.error(`You were kicked from #${roomName}`);
+
+      if (activeRoomRef.current?.name === roomName) {
+        setActiveRoom(null);
+      }
+    });
+
     newSocket.on("room:unbanned", ({ roomName }) => {
       toast(`You were unbanned in #${roomName}`);
     });
