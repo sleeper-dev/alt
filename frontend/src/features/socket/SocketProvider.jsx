@@ -118,6 +118,15 @@ export const SocketProvider = ({ children }) => {
       toast(`You were unbanned in #${roomName}`);
     });
 
+    newSocket.on("room:updated", ({ room }) => {
+      console.log(room.isPrivate);
+      setRooms((prev) =>
+        prev.map((r) =>
+          r._id === room._id ? { ...r, isPrivate: room.isPrivate } : r,
+        ),
+      );
+    });
+
     newSocket.on("command:error", (msg) => toast.error(msg));
 
     return () => {

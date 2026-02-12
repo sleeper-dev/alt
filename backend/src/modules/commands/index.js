@@ -4,8 +4,10 @@ import deleteCommand from "./commands/delete.command.js";
 import helpCommand from "./commands/help.command.js";
 import kickCommand from "./commands/kick.command.js";
 import leaveCommand from "./commands/leave.command.js";
+import lockCommand from "./commands/lock.command.js";
 import sayCommand from "./commands/say.command.js";
 import unbanCommand from "./commands/unban.command.js";
+import unlockCommand from "./commands/unlock.command.js";
 import whoisCommand from "./commands/whois.command.js";
 
 export const commands = [
@@ -17,5 +19,7 @@ export const commands = [
   banCommand,
   unbanCommand,
   banlistCommand,
+  lockCommand,
+  unlockCommand,
   deleteCommand,
 ];
