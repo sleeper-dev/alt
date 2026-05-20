@@ -7,19 +7,30 @@ export const MessageInput = ({ activeRoom }) => {
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
 
+  const handleChange = (e) => {
+    setText(e.target.value);
+    handleTyping();
+  };
+
   const handleTyping = () => {
     if (!socket || !activeRoom) return;
 
     if (!isTypingRef.current) {
-      socket.emit("typing:start", { roomName: activeRoom.name });
+      socket.emit("typing:start", {
+        roomName: activeRoom.name,
+      });
+
       isTypingRef.current = true;
     }
 
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("typing:stop", { roomName: activeRoom.name });
+      socket.emit("typing:stop", {
+        roomName: activeRoom.name,
+      });
+
       isTypingRef.current = false;
-    }, 1000);
+    }, 1200);
   };
 
   const sendMessage = (e) => {
@@ -55,8 +66,11 @@ export const MessageInput = ({ activeRoom }) => {
   useEffect(() => {
     return () => {
       clearTimeout(typingTimeoutRef.current);
+
       if (isTypingRef.current && socket && activeRoom) {
-        socket.emit("typing:stop", { roomName: activeRoom.name });
+        socket.emit("typing:stop", {
+          roomName: activeRoom.name,
+        });
       }
     };
   }, [socket, activeRoom]);
@@ -67,7 +81,7 @@ export const MessageInput = ({ activeRoom }) => {
         <input
           type="text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => handleChange(e)}
           placeholder="Type your message..."
           className="flex-1 border-2 border-black/90 bg-transparent px-3 py-2 font-mono text-sm focus:outline-none"
         />

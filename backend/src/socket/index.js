@@ -71,6 +71,10 @@ export const initSocket = (httpServer) => {
       }
 
       if (socket.currentRoom) {
+        socket.to(socket.currentRoom).emit("typing:stop", {
+          roomName: socket.currentRoom,
+          userId: socket.user._id,
+        });
         await leaveRoom(io, socket, socket.currentRoom);
       }
       console.log(`${socket.user.username} disconnected`);

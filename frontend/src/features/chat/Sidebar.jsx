@@ -122,7 +122,7 @@ export const Sidebar = ({
                 className={`flex w-full items-center justify-between border-2 border-black/90 px-3 py-2 text-left font-mono transition-colors ${
                   isActive
                     ? "bg-[#d0f5be]"
-                    : "cursor-pointer hover:bg-[#d0f5be]"
+                    : "cursor-pointer hover:bg-[#c7f9cc]"
                 }`}
               >
                 <span># {room.name}</span>
