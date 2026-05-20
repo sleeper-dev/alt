@@ -1,77 +1,96 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "../auth/auth.context.jsx";
+import { useState } from "react";
 import { Modal } from "../../shared/components/Modal.jsx";
-import { useSocket } from "../socket/SocketProvider.jsx";
+import { useAuth } from "../auth/auth.context.jsx";
 
 export const Sidebar = ({
   rooms,
   activeRoom,
-  setActiveRoom,
   loadingRooms,
   roomsError,
+  joinRoom,
   onShowCreate,
 }) => {
   const { user, logout } = useAuth();
-  const { socket } = useSocket();
+
   const [passwordModal, setPasswordModal] = useState({
     isOpen: false,
     room: null,
   });
+
   const [password, setPassword] = useState("");
 
   const handleRoomClick = (room) => {
     const isOwner = room.ownerId === user._id;
+
     if (room.isPrivate && !isOwner) {
-      setPasswordModal({ isOpen: true, room });
+      setPasswordModal({
+        isOpen: true,
+        room,
+      });
+
       return;
     }
+
     joinRoom(room.name);
   };
 
-  const joinRoom = (roomName, password = "") => {
-    if (!socket || activeRoom?.name === roomName) return;
+  const handlePrivateJoin = () => {
+    if (!passwordModal.room) return;
 
-    socket.emit("room:join", { roomName, password });
+    joinRoom(passwordModal.room.name, password);
 
-    socket.once("room:joined", () => {
-      const joined = rooms.find((r) => r.name === roomName);
-      if (joined) setActiveRoom(joined);
-
-      setPasswordModal({ isOpen: false, room: null });
-      setPassword("");
+    setPasswordModal({
+      isOpen: false,
+      room: null,
     });
+
+    setPassword("");
   };
 
-  useEffect(() => {
-    if (!socket) return;
+  const closePasswordModal = () => {
+    setPasswordModal({
+      isOpen: false,
+      room: null,
+    });
 
-    return () => {};
-  }, [socket]);
+    setPassword("");
+  };
 
   return (
     <aside className="flex w-64 flex-col border-r-4 border-black/90 p-4">
+      {/* HEADER */}
+
       <h1 className="mb-2 font-mono text-xl tracking-wider">{"// ROOMS //"}</h1>
+
       <div className="mb-4 flex items-center gap-3">
         <div className="inline-block h-4 w-12 bg-black" />
+
         <div className="h-4 flex-1 bg-linear-to-r from-[#ff6b6b] via-[#ffd166] to-[#6bf0ff] opacity-90" />
       </div>
+
+      {/* USER */}
 
       <div className="mb-4 border-2 border-black/90 bg-[#d0f5be] px-3 py-3">
         <p className="font-mono text-xs tracking-widest text-black/70 uppercase">
           Logged in as
         </p>
+
         <div className="mt-1 flex items-center justify-between">
-          <p className="overflow-x-hidden font-mono text-lg font-bold">
+          <p className="overflow-hidden font-mono text-lg font-bold">
             {user?.username}
           </p>
+
           <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+
             <span className="font-mono text-xs font-semibold text-green-700">
               online
             </span>
           </div>
         </div>
       </div>
+
+      {/* CREATE ROOM */}
 
       <button
         onClick={onShowCreate}
@@ -80,27 +99,41 @@ export const Sidebar = ({
         + Create Room
       </button>
 
+      {/* ROOM LIST */}
+
       <div className="flex-1 space-y-2 overflow-y-auto pr-1 text-sm">
         {loadingRooms && (
           <div className="font-mono text-xs">Loading rooms...</div>
         )}
+
         {roomsError && (
           <div className="font-mono text-xs text-red-600">{roomsError}</div>
         )}
 
         {!loadingRooms &&
           !roomsError &&
-          rooms.map((room) => (
-            <button
-              key={room._id}
-              onClick={() => handleRoomClick(room)}
-              className={`flex w-full items-center justify-between border-2 border-black/90 px-3 py-2 text-left font-mono transition-colors ${activeRoom?._id === room._id ? "bg-[#d0f5be]" : "hover:bg-[#d0f5be"}`}
-            >
-              <span># {room.name}</span>
-              {room.isPrivate && <span>🔒</span>}
-            </button>
-          ))}
+          rooms.map((room) => {
+            const isActive = activeRoom?._id === room._id;
+
+            return (
+              <button
+                key={room._id}
+                onClick={() => handleRoomClick(room)}
+                className={`flex w-full items-center justify-between border-2 border-black/90 px-3 py-2 text-left font-mono transition-colors ${
+                  isActive
+                    ? "bg-[#d0f5be]"
+                    : "cursor-pointer hover:bg-[#d0f5be]"
+                }`}
+              >
+                <span># {room.name}</span>
+
+                {room.isPrivate && <span>🔒</span>}
+              </button>
+            );
+          })}
       </div>
+
+      {/* LOGOUT */}
 
       <div className="mt-auto pt-4">
         <button
@@ -111,10 +144,12 @@ export const Sidebar = ({
         </button>
       </div>
 
+      {/* PASSWORD MODAL */}
+
       {passwordModal.isOpen && passwordModal.room && (
         <Modal
           isOpen={passwordModal.isOpen}
-          onClose={() => setPasswordModal({ isOpen: false, room: null })}
+          onClose={closePasswordModal}
           title={`Join #${passwordModal.room.name}`}
         >
           <input
@@ -124,10 +159,9 @@ export const Sidebar = ({
             onChange={(e) => setPassword(e.target.value)}
             className="w-full border-2 border-black/90 px-3 py-2 font-mono text-sm focus:outline-none"
           />
+
           <button
-            onClick={() => {
-              joinRoom(passwordModal.room.name, password);
-            }}
+            onClick={handlePrivateJoin}
             className="mt-4 w-full border-4 border-black/90 bg-[#6bf0ff] px-4 py-2 text-sm font-bold uppercase transition-transform hover:-translate-y-px"
           >
             Join

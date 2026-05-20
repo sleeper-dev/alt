@@ -46,6 +46,7 @@ export const registerTypingHandlers = (io, socket) => {
     const normalized = roomName.toLowerCase().trim();
 
     socket.to(normalized).emit("typing:start", {
+      roomName: normalized,
       userId: socket.user._id,
       username: socket.user.username,
     });
@@ -57,6 +58,7 @@ export const registerTypingHandlers = (io, socket) => {
     const normalized = roomName.toLowerCase().trim();
 
     socket.to(normalized).emit("typing:stop", {
+      roomName: normalized,
       userId: socket.user._id,
     });
   });

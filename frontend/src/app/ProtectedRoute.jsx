@@ -19,9 +19,9 @@ const ProtectedRoute = ({ children }) => {
   }
 
   return (
-    <ChatProvider>
-      <SocketProvider>{children}</SocketProvider>
-    </ChatProvider>
+    <SocketProvider>
+      <ChatProvider>{children}</ChatProvider>
+    </SocketProvider>
   );
 };
 

@@ -1,34 +1,45 @@
 import { useEffect, useRef, useState } from "react";
-import { useSocket } from "../socket/SocketProvider.jsx";
 import { api } from "../../shared/utils/axios.js";
+import { useSocket } from "../socket/SocketProvider.jsx";
+import { useChat } from "./chat.context.jsx";
 
 export const Messages = ({ activeRoom }) => {
   const { socket } = useSocket();
+  const { typingUsers } = useChat();
+
+  const usersTyping = typingUsers?.[activeRoom?.name] || [];
+
   const [messages, setMessages] = useState([]);
-  const [typingUsers, setTypingUsers] = useState([]);
-  const messagesEndRef = useRef();
+
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (!activeRoom || !socket) return;
 
-    const roomName = activeRoom.name;
+    setMessages([]);
 
     const fetchMessages = async () => {
       try {
-        const { data } = await api.get(`/messages/${roomName}`);
+        const { data } = await api.get(`/messages/${activeRoom.name}`);
+
         setMessages(data);
       } catch (err) {
         console.error("Failed to fetch messages:", err);
       }
     };
+
     fetchMessages();
 
     const handleNewMessage = (msg) => {
-      if (msg.roomName === roomName) setMessages((prev) => [...prev, msg]);
+      if (msg.roomName !== activeRoom.name) return;
+
+      setMessages((prev) => [...prev, msg]);
     };
 
     const handleSystemMessage = (msg) => {
-      if (msg.roomName && msg.roomName !== roomName) return;
+      if (msg.roomName && msg.roomName !== activeRoom.name) {
+        return;
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -41,46 +52,34 @@ export const Messages = ({ activeRoom }) => {
       ]);
     };
 
-    const handleTypingStart = ({ userId, username }) => {
-      setTypingUsers((prev) =>
-        prev.find((u) => u.userId === userId)
-          ? prev
-          : [...prev, { userId, username }],
-      );
-    };
-
-    const handleTypingStop = ({ userId }) => {
-      setTypingUsers((prev) => prev.filter((u) => u.userId !== userId));
-    };
-
     socket.on("message:new", handleNewMessage);
-    socket.on("typing:start", handleTypingStart);
-    socket.on("typing:stop", handleTypingStop);
     socket.on("system:message", handleSystemMessage);
 
     return () => {
       socket.off("message:new", handleNewMessage);
-      socket.off("typing:start", handleTypingStart);
-      socket.off("typing:stop", handleTypingStop);
       socket.off("system:message", handleSystemMessage);
     };
   }, [activeRoom, socket]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
   }, [messages]);
 
-  if (!activeRoom)
+  if (!activeRoom) {
     return (
       <div className="flex flex-1 items-center justify-center p-6 text-center font-mono">
         <div>
           <p className="mb-2 text-lg font-bold">Join a room</p>
+
           <p className="text-sm text-black/70">
             Select an existing room or create your own.
           </p>
         </div>
       </div>
     );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-6 text-sm">
@@ -99,7 +98,7 @@ export const Messages = ({ activeRoom }) => {
 
           const isOwner =
             msg.sender?._id &&
-            activeRoom?.ownerId &&
+            activeRoom.ownerId &&
             msg.sender._id === activeRoom.ownerId;
 
           return (
@@ -122,13 +121,13 @@ export const Messages = ({ activeRoom }) => {
         })}
       </div>
 
-      {typingUsers.length > 0 && (
+      {usersTyping.length > 0 && (
         <div className="mt-4 font-mono text-xs text-black/60">
-          {typingUsers.map((u) => u.username).join(", ")} typing...
+          {usersTyping.map((u) => u.username).join(", ")} typing...
         </div>
       )}
 
-      <div ref={messagesEndRef}></div>
+      <div ref={messagesEndRef} />
     </div>
   );
 };

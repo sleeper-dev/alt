@@ -12,9 +12,9 @@ export const ChatLayout = () => {
         <Sidebar
           rooms={chat.rooms}
           activeRoom={chat.activeRoom}
-          setActiveRoom={chat.setActiveRoom}
           loadingRooms={chat.loadingRooms}
           roomsError={chat.roomsError}
+          joinRoom={chat.joinRoom}
           onShowCreate={() => chat.setShowCreateModal(true)}
         />
 
