@@ -44,10 +44,8 @@ export const Messages = ({ activeRoom }) => {
       setMessages((prev) => [
         ...prev,
         {
+          ...msg,
           _id: `sys-${Date.now()}`,
-          content: msg.content,
-          system: true,
-          createdAt: msg.createdAt || new Date(),
         },
       ]);
     };
@@ -89,8 +87,11 @@ export const Messages = ({ activeRoom }) => {
             return (
               <div
                 key={msg._id}
-                className="text-center text-xs whitespace-pre-line text-gray-500 italic"
+                className={`text-center text-xs whitespace-pre-line italic ${
+                  msg.action ? "font-semibold text-purple-500" : "text-gray-500"
+                }`}
               >
+                {msg.action ? "* " : ""}
                 {msg.content}
               </div>
             );
