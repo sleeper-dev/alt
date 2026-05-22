@@ -16,8 +16,6 @@ export const Messages = ({ activeRoom }) => {
   useEffect(() => {
     if (!activeRoom || !socket) return;
 
-    setMessages([]);
-
     const fetchMessages = async () => {
       try {
         const { data } = await api.get(`/messages/${activeRoom.name}`);

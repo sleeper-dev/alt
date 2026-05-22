@@ -1,4 +1,8 @@
-import { emitRoomUsers, leaveRoom } from "../modules/rooms/room.helper.js";
+import {
+  emitRoomUsers,
+  joinRoom,
+  leaveRoom,
+} from "../modules/rooms/room.helper.js";
 import { Room } from "../modules/rooms/room.model.js";
 import bcrypt from "bcrypt";
 import { addUserToRoom, roomPresence } from "./presence.js";
@@ -9,7 +13,6 @@ export const registerRoomHandlers = (io, socket) => {
       if (!roomName) return;
 
       const normalized = roomName.toLowerCase().trim();
-      const userId = socket.user._id.toString();
 
       const room = await Room.findOne({
         name: normalized,
@@ -20,46 +23,12 @@ export const registerRoomHandlers = (io, socket) => {
         return socket.emit("room:join:error", "Room not found");
       }
 
-      if (room.bannedUsers.some((id) => id.equals(socket.user._id))) {
-        return socket.emit("room:join:error", "You are banned from this room");
-      }
-
-      const isOwner = socket.user._id.equals(room.ownerId);
-
-      if (room.isPrivate && !isOwner) {
-        if (!password) {
-          return socket.emit("room:join:error", "Room password required");
-        }
-
-        const isMatch = await bcrypt.compare(password, room.password);
-        if (!isMatch) {
-          return socket.emit("room:join:error", "Invalid room password");
-        }
-      }
-
-      if (socket.currentRoom && socket.currentRoom !== normalized) {
-        await leaveRoom(io, socket, socket.currentRoom);
-      }
-
-      socket.join(normalized);
-      socket.currentRoom = normalized;
-
-      const wasAlreadyInRoom = roomPresence.get(normalized)?.has(userId);
-
-      addUserToRoom(normalized, userId);
-
-      if (!wasAlreadyInRoom) {
-        socket.to(normalized).emit("system:message", {
-          roomName: normalized,
-          content: `--> ${socket.user.username} has joined the room`,
-          createdAt: new Date(),
-          system: true,
-        });
-      }
-
-      await emitRoomUsers(io, normalized);
-
-      socket.emit("room:joined", { room: normalized });
+      await joinRoom({
+        io,
+        socket,
+        room,
+        password,
+      });
     } catch (err) {
       console.error(err);
       socket.emit("room:join:error", "Something went wrong");

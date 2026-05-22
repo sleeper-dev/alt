@@ -1,4 +1,60 @@
-import { getRoomUsers, roomPresence } from "../../socket/presence.js";
+import {
+  addUserToRoom,
+  getRoomUsers,
+  roomPresence,
+} from "../../socket/presence.js";
+
+import bcrypt from "bcrypt";
+
+export const joinRoom = async ({ io, socket, room, password = "" }) => {
+  const normalized = room.name.toLowerCase().trim();
+  const userId = socket.user._id.toString();
+
+  if (room.bannedUsers.some((id) => id.equals(socket.user._id))) {
+    return socket.emit("room:join:error", "You are banned from this room");
+  }
+
+  const isOwner = socket.user._id.equals(room.ownerId);
+
+  if (room.isPrivate && !isOwner) {
+    if (!password) {
+      return socket.emit("room:join:error", "Room password required");
+    }
+
+    const isMatch = await bcrypt.compare(password, room.password);
+
+    if (!isMatch) {
+      return socket.emit("room:join:error", "Invalid room password");
+    }
+  }
+
+  if (socket.currentRoom && socket.currentRoom !== normalized) {
+    await leaveRoom(io, socket, socket.currentRoom);
+  }
+
+  socket.join(normalized);
+  socket.currentRoom = normalized;
+
+  const wasAlreadyInRoom = roomPresence.get(normalized)?.has(userId);
+
+  addUserToRoom(normalized, userId);
+
+  if (!wasAlreadyInRoom) {
+    socket.to(normalized).emit("system:message", {
+      roomName: normalized,
+      content: `--> ${socket.user.username} has joined the room`,
+      createdAt: new Date(),
+      system: true,
+    });
+  }
+
+  await emitRoomUsers(io, normalized);
+
+  socket.emit("room:joined", {
+    room: normalized,
+    systemMessage: `Joined #${normalized}`,
+  });
+};
 
 export const leaveRoom = async (io, socket, roomName) => {
   if (!roomName) return;

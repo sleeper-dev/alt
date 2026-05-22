@@ -6,6 +6,7 @@ import kickCommand from "./commands/kick.command.js";
 import leaveCommand from "./commands/leave.command.js";
 import lockCommand from "./commands/lock.command.js";
 import meCommand from "./commands/me.command.js";
+import randomCommand from "./commands/random.command.js";
 import sayCommand from "./commands/say.command.js";
 import topicCommand from "./commands/topic.command.js";
 import unbanCommand from "./commands/unban.command.js";
@@ -16,6 +17,7 @@ export const commands = [
   helpCommand,
   whoisCommand,
   meCommand,
+  randomCommand,
   leaveCommand,
   sayCommand,
   kickCommand,
