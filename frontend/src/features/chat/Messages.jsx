@@ -59,7 +59,7 @@ export const Messages = ({ activeRoom }) => {
       socket.off("message:new", handleNewMessage);
       socket.off("system:message", handleSystemMessage);
     };
-  }, [activeRoom, socket]);
+  }, [activeRoom?.name, socket]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({

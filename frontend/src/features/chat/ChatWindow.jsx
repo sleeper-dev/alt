@@ -21,10 +21,10 @@ export const ChatWindow = ({ activeRoom }) => {
 
           {activeRoom && (
             <span
-              title={activeRoom.description}
+              title={activeRoom.topic}
               className="min-w-0 flex-1 overflow-hidden font-mono text-sm whitespace-nowrap"
             >
-              {activeRoom.description}
+              {activeRoom.topic}
             </span>
           )}
         </div>

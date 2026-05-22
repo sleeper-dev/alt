@@ -11,7 +11,7 @@ const roomSchema = new mongoose.Schema(
       maxlength: 30,
     },
 
-    description: {
+    topic: {
       type: String,
       trim: true,
       maxlength: 200,

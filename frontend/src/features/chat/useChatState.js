@@ -15,7 +15,7 @@ export const useChatState = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [newRoomName, setNewRoomName] = useState("");
-  const [newRoomDesc, setNewRoomDesc] = useState("");
+  const [newRoomTopic, setNewRoomTopic] = useState("");
 
   const [isPrivate, setIsPrivate] = useState(false);
   const [roomPassword, setRoomPassword] = useState("");
@@ -88,7 +88,7 @@ export const useChatState = () => {
             ? {
                 ...r,
                 isPrivate: room.isPrivate,
-                description: room.description,
+                topic: room.topic,
                 name: room.name,
               }
             : r,
@@ -164,7 +164,7 @@ export const useChatState = () => {
       socket.off("typing:start", handleTypingStart);
       socket.off("typing:stop", handleTypingStop);
     };
-  }, [socket, rooms]);
+  }, [socket]);
 
   const joinRoom = (roomName, password = "") => {
     if (!socket) return;
@@ -201,7 +201,7 @@ export const useChatState = () => {
 
       const newRoom = await createRoom({
         name: newRoomName.trim(),
-        description: newRoomDesc.trim(),
+        topic: newRoomTopic.trim(),
         isPrivate,
         password: isPrivate ? roomPassword.trim() : undefined,
       });
@@ -214,7 +214,7 @@ export const useChatState = () => {
       });
 
       setNewRoomName("");
-      setNewRoomDesc("");
+      setNewRoomTopic("");
 
       setIsPrivate(false);
       setRoomPassword("");
@@ -250,8 +250,8 @@ export const useChatState = () => {
     newRoomName,
     setNewRoomName,
 
-    newRoomDesc,
-    setNewRoomDesc,
+    newRoomTopic: newRoomTopic,
+    setNewRoomTopic: setNewRoomTopic,
 
     isPrivate,
     setIsPrivate,

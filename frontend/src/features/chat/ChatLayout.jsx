@@ -37,9 +37,9 @@ export const ChatLayout = () => {
 
           <input
             type="text"
-            placeholder="Room description (optional)"
-            value={chat.newRoomDesc}
-            onChange={(e) => chat.setNewRoomDesc(e.target.value)}
+            placeholder="Room topic (optional)"
+            value={chat.newRoomTopic}
+            onChange={(e) => chat.setNewRoomTopic(e.target.value)}
             className="w-full border-2 border-black/90 px-3 py-2 font-mono text-sm focus:outline-none"
           />
 

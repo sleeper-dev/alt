@@ -12,7 +12,7 @@ export const getRooms = async (req, res) => {
 };
 
 export const createRoom = async (req, res) => {
-  let { name, description, isPrivate, password } = req.body;
+  let { name, topic, isPrivate, password } = req.body;
 
   if (!name) {
     return res.status(400).json({ message: "Room name is required" });
@@ -43,7 +43,7 @@ export const createRoom = async (req, res) => {
 
   const room = await Room.create({
     name,
-    description,
+    topic,
     isPrivate,
     password: hashedPassword,
     ownerId: req.user.id,
