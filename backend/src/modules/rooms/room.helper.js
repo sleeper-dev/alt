@@ -26,7 +26,7 @@ export const leaveRoom = async (io, socket, roomName) => {
 
     socket.to(normalized).emit("system:message", {
       roomName: normalized,
-      content: `${socket.user.username} has left the room`,
+      content: `<-- ${socket.user.username} has left the room`,
       createdAt: new Date(),
       system: true,
     });

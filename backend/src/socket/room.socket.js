@@ -51,7 +51,7 @@ export const registerRoomHandlers = (io, socket) => {
       if (!wasAlreadyInRoom) {
         socket.to(normalized).emit("system:message", {
           roomName: normalized,
-          content: `${socket.user.username} has joined the room`,
+          content: `--> ${socket.user.username} has joined the room`,
           createdAt: new Date(),
           system: true,
         });
