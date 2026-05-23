@@ -2,7 +2,7 @@ import { handleCommand } from "../modules/commands/commandHandler.js";
 import { Message } from "../modules/messages/messages.model.js";
 import { Room } from "../modules/rooms/room.model.js";
 
-export const registerMessageHandlers = (io, socket) => {
+export const registerMessageHandlers = (io, socket, slowModeTracker) => {
   socket.on("message:send", async ({ roomName, content }) => {
     try {
       if (!roomName || !content?.trim()) return;
@@ -11,6 +11,29 @@ export const registerMessageHandlers = (io, socket) => {
 
       const room = await Room.findOne({ name: normalized });
       if (!room) return;
+
+      const isOwner = socket.user._id.equals(room.ownerId);
+
+      if (!isOwner && room.slowMode > 0) {
+        const key = `${normalized}:${socket.user._id}`;
+
+        const lastMessageAt = slowModeTracker.get(key);
+
+        if (lastMessageAt) {
+          const diff = (Date.now() - lastMessageAt) / 1000;
+
+          if (diff < room.slowMode) {
+            const remaining = Math.ceil(room.slowMode - diff);
+
+            return socket.emit(
+              "command:error",
+              `Slowmode enabled. Wait ${remaining}s.`,
+            );
+          }
+        }
+
+        slowModeTracker.set(key, Date.now());
+      }
 
       const message = await Message.create({
         room: room._id,

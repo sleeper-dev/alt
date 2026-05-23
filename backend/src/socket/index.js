@@ -45,9 +45,11 @@ export const initSocket = (httpServer) => {
     }
   });
 
+  const slowModeTracker = new Map();
+
   io.on("connection", async (socket) => {
     registerRoomHandlers(io, socket);
-    registerMessageHandlers(io, socket);
+    registerMessageHandlers(io, socket, slowModeTracker);
     registerTypingHandlers(io, socket);
     registerUserHandlers(io, socket);
 
@@ -67,6 +69,12 @@ export const initSocket = (httpServer) => {
       for (const [roomName, users] of roomPresence.entries()) {
         if (users.has(userId)) {
           removeUserFromRoom(roomName, userId);
+        }
+      }
+
+      for (const key of slowModeTracker.keys()) {
+        if (key.endsWith(`:${socket.user._id}`)) {
+          slowModeTracker.delete(key);
         }
       }
 

@@ -42,6 +42,11 @@ const roomSchema = new mongoose.Schema(
       },
     ],
 
+    slowMode: {
+      type: Number,
+      default: 0,
+    },
+
     isActive: {
       type: Boolean,
       default: true,

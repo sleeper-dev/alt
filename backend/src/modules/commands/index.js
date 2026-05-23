@@ -8,6 +8,7 @@ import lockCommand from "./commands/lock.command.js";
 import meCommand from "./commands/me.command.js";
 import randomCommand from "./commands/random.command.js";
 import sayCommand from "./commands/say.command.js";
+import slowmodeCommand from "./commands/slowmode.command.js";
 import topicCommand from "./commands/topic.command.js";
 import unbanCommand from "./commands/unban.command.js";
 import unlockCommand from "./commands/unlock.command.js";
@@ -28,4 +29,5 @@ export const commands = [
   unlockCommand,
   deleteCommand,
   topicCommand,
+  slowmodeCommand,
 ];
