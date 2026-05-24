@@ -61,3 +61,54 @@ export const parseMessageContent = (content) => {
 
   return parts;
 };
+
+export const parseMentions = (text) => {
+  if (!text || typeof text !== "string") {
+    return [];
+  }
+
+  const parts = [];
+
+  const mentionRegex = /(@[a-zA-Z0-9_]+)/g;
+
+  let lastIndex = 0;
+  let match;
+
+  while ((match = mentionRegex.exec(text)) !== null) {
+    const mention = match[0];
+    const start = match.index;
+
+    if (start > lastIndex) {
+      parts.push({
+        type: "text",
+        content: text.slice(lastIndex, start),
+      });
+    }
+
+    parts.push({
+      type: "mention",
+      content: mention,
+      username: mention.slice(1),
+    });
+
+    lastIndex = start + mention.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({
+      type: "text",
+      content: text.slice(lastIndex),
+    });
+  }
+
+  if (parts.length === 0) {
+    return [
+      {
+        type: "text",
+        content: text,
+      },
+    ];
+  }
+
+  return parts;
+};

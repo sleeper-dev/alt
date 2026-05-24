@@ -2,11 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../../shared/utils/axios.js";
 import { useSocket } from "../socket/SocketProvider.jsx";
 import { useChat } from "./chat.context.jsx";
-import { parseMessageContent } from "../../shared/utils/messages.js";
+import {
+  parseMentions,
+  parseMessageContent,
+} from "../../shared/utils/messages.js";
+import { useAuth } from "../auth/auth.context.jsx";
 
 export const Messages = ({ activeRoom }) => {
   const { socket } = useSocket();
   const { typingUsers } = useChat();
+  const { user } = useAuth();
 
   const usersTyping = typingUsers?.[activeRoom?.name] || [];
 
@@ -144,14 +149,23 @@ export const Messages = ({ activeRoom }) => {
             activeRoom.ownerId &&
             msg.sender._id === activeRoom.ownerId;
 
+          const isMentioningMe =
+            user &&
+            msg.sender?._id !== user._id &&
+            msg.content
+              ?.toLowerCase()
+              .includes(`@${user.username.toLowerCase()}`);
+
           const parts = parseMessageContent(msg.content);
 
           return (
             <div
               key={msg._id || msg.id}
-              className={
-                isOwner ? "border-l-4 border-yellow-400 bg-yellow-50 pl-3" : ""
-              }
+              className={`pl-3 ${
+                isOwner ? "border-l-4 border-yellow-400 bg-yellow-50" : ""
+              } ${
+                isMentioningMe ? "border-l-4 border-cyan-400 bg-cyan-50" : ""
+              } `}
             >
               <span className="font-mono font-bold">
                 [{new Date(msg.createdAt).toLocaleTimeString()}]
@@ -169,7 +183,24 @@ export const Messages = ({ activeRoom }) => {
                         key={index}
                         className="wrap-break-word whitespace-pre-wrap"
                       >
-                        {part.content}
+                        {parseMentions(part.content).map(
+                          (segment, segmentIndex) => {
+                            if (segment.type === "mention") {
+                              return (
+                                <span
+                                  key={segmentIndex}
+                                  className="rounded bg-cyan-200 px-1 font-semibold text-cyan-900"
+                                >
+                                  {segment.content}
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <span key={segmentIndex}>{segment.content}</span>
+                            );
+                          },
+                        )}
                       </p>
                     );
                   }
