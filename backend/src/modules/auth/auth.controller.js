@@ -62,14 +62,16 @@ export const login = async (req, res, next) => {
     const { email: username, password } = req.body;
 
     if (!username || !password) {
-      return res
-        .status(400)
-        .json({ message: "Username and password are required" });
+      return res.status(400).json({
+        message: "Username and password are required",
+      });
     }
 
-    const user = await User.findOne({ username: username }).select(
-      "+password +refreshToken",
-    );
+    const normalizedUsername = username.toLowerCase().trim();
+
+    const user = await User.findOne({
+      usernameLower: normalizedUsername,
+    }).select("+password +refreshToken");
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
