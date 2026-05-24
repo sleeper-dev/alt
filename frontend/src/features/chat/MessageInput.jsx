@@ -3,14 +3,11 @@ import { useSocket } from "../socket/SocketProvider.jsx";
 
 export const MessageInput = ({ activeRoom }) => {
   const { socket } = useSocket();
+
   const [text, setText] = useState("");
+
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
-
-  const handleChange = (e) => {
-    setText(e.target.value);
-    handleTyping();
-  };
 
   const handleTyping = () => {
     if (!socket || !activeRoom) return;
@@ -24,6 +21,7 @@ export const MessageInput = ({ activeRoom }) => {
     }
 
     clearTimeout(typingTimeoutRef.current);
+
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("typing:stop", {
         roomName: activeRoom.name,
@@ -33,35 +31,53 @@ export const MessageInput = ({ activeRoom }) => {
     }, 1200);
   };
 
-  const sendMessage = (e) => {
-    e.preventDefault();
-    if (!socket || !activeRoom || !text.trim()) return;
+  const handleChange = (e) => {
+    setText(e.target.value);
+    handleTyping();
+  };
 
-    const trimmed = text.trim();
+  const sendMessage = () => {
+    if (!socket || !activeRoom) return;
 
-    if (trimmed.startsWith("/")) {
+    const content = text.replace(/\r\n/g, "\n");
+
+    if (!content.trim()) return;
+
+    if (content.startsWith("/")) {
       socket.emit("command:send", {
-        command: trimmed,
+        command: content,
       });
     } else {
       socket.emit("message:send", {
         roomName: activeRoom.name,
-        content: trimmed,
+        content,
       });
     }
 
     if (isTypingRef.current) {
-      socket.emit("typing:stop", { roomName: activeRoom.name });
+      socket.emit("typing:stop", {
+        roomName: activeRoom.name,
+      });
+
       isTypingRef.current = false;
     }
 
     setText("");
+
     clearTimeout(typingTimeoutRef.current);
   };
 
-  useEffect(() => {
-    if (text) handleTyping();
-  }, [text]);
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && e.shiftKey) {
+      return;
+    }
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      sendMessage();
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -76,15 +92,23 @@ export const MessageInput = ({ activeRoom }) => {
   }, [socket, activeRoom]);
 
   return (
-    <form onSubmit={sendMessage} className="border-t-4 border-black/90 p-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        sendMessage();
+      }}
+      className="border-t-4 border-black/90 p-4"
+    >
       <div className="flex gap-3">
-        <input
-          type="text"
+        <textarea
           value={text}
-          onChange={(e) => handleChange(e)}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
           placeholder="Type your message..."
-          className="flex-1 border-2 border-black/90 bg-transparent px-3 py-2 font-mono text-sm focus:outline-none"
+          rows={1}
+          className="flex-1 resize-none border-2 border-black/90 bg-transparent px-3 py-2 font-mono text-sm focus:outline-none"
         />
+
         <button
           type="submit"
           className="border-4 border-black/90 bg-[#6bf0ff] px-4 py-2 text-sm font-bold uppercase transition-transform hover:-translate-y-px"
@@ -92,6 +116,12 @@ export const MessageInput = ({ activeRoom }) => {
           Send
         </button>
       </div>
+
+      {activeRoom.slowMode > 0 && (
+        <div className="mt-2 font-mono text-[11px] text-black/50">
+          Slow mode: {activeRoom.slowMode}s
+        </div>
+      )}
     </form>
   );
 };

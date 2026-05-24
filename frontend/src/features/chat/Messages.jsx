@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../../shared/utils/axios.js";
 import { useSocket } from "../socket/SocketProvider.jsx";
 import { useChat } from "./chat.context.jsx";
+import { parseMessageContent } from "../../shared/utils/messages.js";
 
 export const Messages = ({ activeRoom }) => {
   const { socket } = useSocket();
@@ -10,8 +11,24 @@ export const Messages = ({ activeRoom }) => {
   const usersTyping = typingUsers?.[activeRoom?.name] || [];
 
   const [messages, setMessages] = useState([]);
+  const [copiedBlock, setCopiedBlock] = useState(null);
 
   const messagesEndRef = useRef(null);
+  const initialLoadRef = useRef(true);
+
+  const copyCodeBlock = async (text, blockId) => {
+    try {
+      await navigator.clipboard.writeText(text);
+
+      setCopiedBlock(blockId);
+
+      setTimeout(() => {
+        setCopiedBlock(null);
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   useEffect(() => {
     if (!activeRoom || !socket) return;
@@ -58,10 +75,36 @@ export const Messages = ({ activeRoom }) => {
   }, [activeRoom?.name, socket]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    const container = messagesEndRef.current?.parentElement;
+
+    if (!container) return;
+
+    if (initialLoadRef.current) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "auto",
+      });
+
+      initialLoadRef.current = false;
+
+      return;
+    }
+
+    const threshold = 120;
+
+    const isNearBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      threshold;
+
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
+
+  useEffect(() => {
+    initialLoadRef.current = true;
+  }, [activeRoom?.name]);
 
   if (!activeRoom) {
     return (
@@ -81,6 +124,7 @@ export const Messages = ({ activeRoom }) => {
     <div className="flex-1 overflow-y-auto p-6 text-sm">
       <div className="space-y-4">
         {messages.map((msg) => {
+          // SYSTEM MESSAGE
           if (msg.system) {
             return (
               <div
@@ -100,6 +144,8 @@ export const Messages = ({ activeRoom }) => {
             activeRoom.ownerId &&
             msg.sender._id === activeRoom.ownerId;
 
+          const parts = parseMessageContent(msg.content);
+
           return (
             <div
               key={msg._id || msg.id}
@@ -114,7 +160,56 @@ export const Messages = ({ activeRoom }) => {
                 {isOwner && <span className="mr-1 text-yellow-500">👑</span>}
                 {msg.sender.username}:
               </span>
-              <p className="mt-1 ml-2">{msg.content}</p>
+              <div className="mt-1 ml-2 space-y-2">
+                {parts.map((part, index) => {
+                  // NORMAL TEXT
+                  if (part.type === "text") {
+                    return (
+                      <p
+                        key={index}
+                        className="wrap-break-word whitespace-pre-wrap"
+                      >
+                        {part.content}
+                      </p>
+                    );
+                  }
+
+                  // CODE / ASCII BLOCK
+                  if (part.type === "code") {
+                    return (
+                      <div
+                        key={index}
+                        className="overflow-hidden rounded-md border-2 border-black/80 bg-black"
+                      >
+                        <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+                          <div className="font-mono text-[11px] text-green-400 uppercase">
+                            {part.language || "text"}
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              copyCodeBlock(part.content, `${msg._id}-${index}`)
+                            }
+                            className="cursor-pointer px-2 py-1 font-mono text-[10px] text-green-300 uppercase transition hover:bg-green-400/10"
+                          >
+                            {copiedBlock === `${msg._id}-${index}`
+                              ? "[ Copied! ]"
+                              : "[ Copy ]"}
+                          </button>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <pre className="p-3 font-mono text-sm whitespace-pre text-green-300">
+                            {part.content}
+                          </pre>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })}
+              </div>
             </div>
           );
         })}

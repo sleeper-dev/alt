@@ -5,7 +5,31 @@ import { Room } from "../modules/rooms/room.model.js";
 export const registerMessageHandlers = (io, socket, slowModeTracker) => {
   socket.on("message:send", async ({ roomName, content }) => {
     try {
-      if (!roomName || !content?.trim()) return;
+      if (!roomName || typeof content !== "string") {
+        return;
+      }
+
+      const normalizedContent = content.replace(/\r\n/g, "\n");
+
+      if (!normalizedContent.trim()) {
+        return;
+      }
+
+      if (normalizedContent.length > 4000) {
+        return socket.emit(
+          "command:error",
+          "Message too long. Max 4000 characters.",
+        );
+      }
+
+      const lineCount = normalizedContent.split("\n").length;
+
+      if (lineCount > 100) {
+        return socket.emit(
+          "command:error",
+          "Message too large. Max 100 lines.",
+        );
+      }
 
       const normalized = roomName.toLowerCase().trim();
 
@@ -38,14 +62,17 @@ export const registerMessageHandlers = (io, socket, slowModeTracker) => {
       const message = await Message.create({
         room: room._id,
         sender: socket.user._id,
-        content: content.trim(),
+        content: normalizedContent,
       });
 
       io.to(normalized).emit("message:new", {
         id: message._id,
         roomName: normalized,
         content: message.content,
-        sender: { username: socket.user.username, _id: socket.user._id },
+        sender: {
+          username: socket.user.username,
+          _id: socket.user._id,
+        },
         createdAt: message.createdAt,
       });
     } catch (err) {
