@@ -10,21 +10,28 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    const normalizedUsername = username.toLowerCase();
+
+    const existingUser = await User.findOne({
+      $or: [
+        { email: email.toLowerCase() },
+        { usernameLower: normalizedUsername },
+      ],
+    });
 
     if (existingUser) {
       return res.status(409).json({
         message:
-          existingUser.email === email
+          existingUser.email === email.toLowerCase()
             ? "Email is already in use"
             : "Username is already in use",
       });
     }
 
     const user = await User.create({
-      username,
-      usernameLower: username.toLowerCase(),
-      email,
+      username: username.trim(),
+      usernameLower: normalizedUsername,
+      email: email.toLowerCase().trim(),
       password,
     });
 
