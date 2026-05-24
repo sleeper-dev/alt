@@ -1,30 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { useSocket } from "../socket/SocketProvider.jsx";
 import { useAuth } from "../auth/auth.context.jsx";
+import { api } from "../../shared/utils/axios.js";
 
 export const MessageInput = ({ activeRoom }) => {
-  const { socket, roomUsers } = useSocket();
-  const usersInRoom = roomUsers?.[activeRoom?.name] || [];
-
+  const { socket } = useSocket();
   const { user } = useAuth();
 
   const [text, setText] = useState("");
 
   const [showMentions, setShowMentions] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState("");
+
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const [mentionUsers, setMentionUsers] = useState([]);
 
   const typingTimeoutRef = useRef(null);
+  const mentionTimeoutRef = useRef(null);
+  const abortRef = useRef(null);
   const isTypingRef = useRef(false);
 
-  const filteredUsers = usersInRoom
-    .map((u) => u.username)
-    .filter(
-      (username) => username.toLowerCase() !== user.username.toLowerCase(),
-    )
-    .filter((username) =>
-      username.toLowerCase().startsWith(mentionQuery.toLowerCase()),
-    )
+  const filteredUsers = mentionUsers
+    .filter((u) => u.username.toLowerCase() !== user.username.toLowerCase())
     .slice(0, 5);
 
   const handleTyping = () => {
@@ -58,15 +54,51 @@ export const MessageInput = ({ activeRoom }) => {
 
     const match = value.match(/(?:^|\s)@([a-zA-Z0-9_]*)$/);
 
-    if (match) {
-      setMentionQuery(match[1]);
+    // NO MENTION MATCH
 
-      setShowMentions(true);
-
-      setSelectedMentionIndex(0);
-    } else {
+    if (!match) {
       setShowMentions(false);
+
+      setMentionUsers([]);
+
+      abortRef.current?.abort();
+
+      return;
     }
+
+    const query = match[1];
+
+    setShowMentions(true);
+
+    setSelectedMentionIndex(0);
+
+    if (!query.trim()) {
+      setMentionUsers([]);
+
+      return;
+    }
+
+    clearTimeout(mentionTimeoutRef.current);
+
+    mentionTimeoutRef.current = setTimeout(async () => {
+      try {
+        abortRef.current?.abort();
+
+        abortRef.current = new AbortController();
+
+        const { data } = await api.get(`/users/search?q=${query}`, {
+          signal: abortRef.current.signal,
+        });
+
+        setMentionUsers(data);
+      } catch (err) {
+        if (err.name === "CanceledError" || err.code === "ERR_CANCELED") {
+          return;
+        }
+
+        console.error(err);
+      }
+    }, 200);
   };
 
   const selectMention = (username) => {
@@ -76,7 +108,7 @@ export const MessageInput = ({ activeRoom }) => {
 
     setShowMentions(false);
 
-    setMentionQuery("");
+    setMentionUsers([]);
 
     setSelectedMentionIndex(0);
   };
@@ -107,7 +139,13 @@ export const MessageInput = ({ activeRoom }) => {
       isTypingRef.current = false;
     }
 
+    abortRef.current?.abort();
+
     setText("");
+
+    setShowMentions(false);
+    setMentionUsers([]);
+    setSelectedMentionIndex(0);
 
     clearTimeout(typingTimeoutRef.current);
   };
@@ -137,7 +175,7 @@ export const MessageInput = ({ activeRoom }) => {
       if (e.key === "Enter" || e.key === "Tab") {
         e.preventDefault();
 
-        selectMention(filteredUsers[selectedMentionIndex]);
+        selectMention(filteredUsers[selectedMentionIndex].username);
 
         return;
       }
@@ -164,6 +202,10 @@ export const MessageInput = ({ activeRoom }) => {
     return () => {
       clearTimeout(typingTimeoutRef.current);
 
+      clearTimeout(mentionTimeoutRef.current);
+
+      abortRef.current?.abort();
+
       if (isTypingRef.current && socket && activeRoom) {
         socket.emit("typing:stop", {
           roomName: activeRoom.name,
@@ -176,11 +218,33 @@ export const MessageInput = ({ activeRoom }) => {
     <form
       onSubmit={(e) => {
         e.preventDefault();
+
         sendMessage();
       }}
       className="border-t-4 border-black/90 p-4"
     >
       <div className="relative flex gap-3">
+        {/* MENTION POPUP */}
+
+        {showMentions && filteredUsers.length > 0 && (
+          <div className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden border-2 border-black/90 bg-white shadow-lg">
+            {filteredUsers.map((mentionUser, index) => (
+              <button
+                key={mentionUser.username}
+                type="button"
+                onClick={() => selectMention(mentionUser.username)}
+                className={`block w-full px-3 py-2 text-left font-mono text-sm ${
+                  index === selectedMentionIndex
+                    ? "bg-cyan-200"
+                    : "hover:bg-cyan-50"
+                } `}
+              >
+                @{mentionUser.username}
+              </button>
+            ))}
+          </div>
+        )}
+
         <textarea
           value={text}
           onChange={handleChange}
@@ -189,25 +253,6 @@ export const MessageInput = ({ activeRoom }) => {
           rows={1}
           className="flex-1 resize-none border-2 border-black/90 bg-transparent px-3 py-2 font-mono text-sm focus:outline-none"
         />
-
-        {showMentions && filteredUsers.length > 0 && (
-          <div className="absolute bottom-14 left-0 z-50 w-64 overflow-hidden border-2 border-black/90 bg-white shadow-lg">
-            {filteredUsers.map((username, index) => (
-              <button
-                key={username}
-                type="button"
-                onClick={() => selectMention(username)}
-                className={`block w-full px-3 py-2 text-left font-mono text-sm ${
-                  index === selectedMentionIndex
-                    ? "bg-cyan-200"
-                    : "hover:bg-cyan-50"
-                } `}
-              >
-                @{username}
-              </button>
-            ))}
-          </div>
-        )}
 
         <button
           type="submit"

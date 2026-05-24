@@ -21,6 +21,13 @@ const messageSchema = new mongoose.Schema(
       maxlength: 1000,
     },
 
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
     isSystem: {
       type: Boolean,
       default: false,

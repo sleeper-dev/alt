@@ -13,7 +13,8 @@ export const getMessages = async (req, res) => {
     .sort({
       createdAt: 1,
     })
-    .populate("sender", "username");
+    .populate("sender", "username")
+    .populate("mentions", "username");
 
   res.json(messages);
 };

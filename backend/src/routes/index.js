@@ -1,6 +1,7 @@
 import { Router } from "express";
 import authRoutes from "../modules/auth/auth.routes.js";
 import roomRoutes from "../modules/rooms/room.routes.js";
+import userRoutes from "../modules/users/user.routes.js";
 import messageRoutes from "../modules/messages/message.routes.js";
 
 const router = Router();
@@ -11,6 +12,7 @@ router.get("/health", (req, res) => {
 
 router.use("/auth", authRoutes);
 router.use("/rooms", roomRoutes);
+router.use("/users", userRoutes);
 router.use("/messages", messageRoutes);
 
 export default router;

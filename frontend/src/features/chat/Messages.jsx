@@ -152,9 +152,7 @@ export const Messages = ({ activeRoom }) => {
           const isMentioningMe =
             user &&
             msg.sender?._id !== user._id &&
-            msg.content
-              ?.toLowerCase()
-              .includes(`@${user.username.toLowerCase()}`);
+            msg.mentions?.some((m) => m._id === user._id);
 
           const parts = parseMessageContent(msg.content);
 
@@ -165,7 +163,7 @@ export const Messages = ({ activeRoom }) => {
                 isOwner ? "border-l-4 border-yellow-400 bg-yellow-50" : ""
               } ${
                 isMentioningMe ? "border-l-4 border-cyan-400 bg-cyan-50" : ""
-              } `}
+              }`}
             >
               <span className="font-mono font-bold">
                 [{new Date(msg.createdAt).toLocaleTimeString()}]
@@ -181,20 +179,39 @@ export const Messages = ({ activeRoom }) => {
                     return (
                       <p
                         key={index}
-                        className="wrap-break-word whitespace-pre-wrap"
+                        className="break-words whitespace-pre-wrap"
                       >
                         {parseMentions(part.content).map(
                           (segment, segmentIndex) => {
                             if (segment.type === "mention") {
-                              return (
-                                <span
-                                  key={segmentIndex}
-                                  className="rounded bg-cyan-200 px-1 font-semibold text-cyan-900"
-                                >
-                                  {segment.content}
-                                </span>
+                              const username = segment.content
+                                .slice(1)
+                                .toLowerCase();
+
+                              const isValidMention = msg.mentions?.some(
+                                (m) => m.username.toLowerCase() === username,
                               );
+
+                              if (isValidMention) {
+                                const isMe =
+                                  username === user.username.toLowerCase();
+
+                                return (
+                                  <span
+                                    key={segmentIndex}
+                                    className={`rounded px-1 font-semibold ${
+                                      isMe
+                                        ? "bg-cyan-300 text-cyan-950"
+                                        : "bg-cyan-100 text-cyan-900"
+                                    }`}
+                                  >
+                                    {segment.content}
+                                  </span>
+                                );
+                              }
                             }
+
+                            // NORMAL TEXT
 
                             return (
                               <span key={segmentIndex}>{segment.content}</span>

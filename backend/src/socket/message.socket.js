@@ -1,4 +1,5 @@
 import { handleCommand } from "../modules/commands/commandHandler.js";
+import { parseMentions } from "../modules/messages/message.helper.js";
 import { Message } from "../modules/messages/messages.model.js";
 import { Room } from "../modules/rooms/room.model.js";
 
@@ -59,10 +60,15 @@ export const registerMessageHandlers = (io, socket, slowModeTracker) => {
         slowModeTracker.set(key, Date.now());
       }
 
+      const mentionedUsers = await parseMentions(content);
+
+      const mentionIds = mentionedUsers.map((u) => u._id);
+
       const message = await Message.create({
         room: room._id,
         sender: socket.user._id,
         content: normalizedContent,
+        mentions: mentionIds,
       });
 
       io.to(normalized).emit("message:new", {
@@ -73,6 +79,10 @@ export const registerMessageHandlers = (io, socket, slowModeTracker) => {
           username: socket.user.username,
           _id: socket.user._id,
         },
+        mentions: mentionedUsers.map((u) => ({
+          _id: u._id,
+          username: u.username,
+        })),
         createdAt: message.createdAt,
       });
     } catch (err) {

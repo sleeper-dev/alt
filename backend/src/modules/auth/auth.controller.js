@@ -23,6 +23,7 @@ export const register = async (req, res, next) => {
 
     const user = await User.create({
       username,
+      usernameLower: username.toLowerCase(),
       email,
       password,
     });
