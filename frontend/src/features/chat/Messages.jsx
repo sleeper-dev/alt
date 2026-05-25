@@ -126,15 +126,15 @@ export const Messages = ({ activeRoom }) => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 text-sm">
-      <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3 text-sm sm:p-6">
+      <div className="w-full space-y-4">
         {messages.map((msg) => {
           // SYSTEM MESSAGE
           if (msg.system) {
             return (
               <div
                 key={msg._id}
-                className={`text-center text-xs whitespace-pre-line italic ${
+                className={`px-2 text-center text-xs whitespace-pre-line italic ${
                   msg.action ? "font-semibold text-purple-500" : "text-gray-500"
                 }`}
               >
@@ -159,27 +159,35 @@ export const Messages = ({ activeRoom }) => {
           return (
             <div
               key={msg._id || msg.id}
-              className={`pl-3 ${
+              className={`min-w-0 overflow-hidden rounded-sm pl-2 sm:pl-3 ${
                 isOwner ? "border-l-4 border-yellow-400 bg-yellow-50" : ""
               } ${
                 isMentioningMe ? "border-l-4 border-cyan-400 bg-cyan-50" : ""
               }`}
             >
-              <span className="font-mono font-bold">
-                [{new Date(msg.createdAt).toLocaleTimeString()}]
-              </span>{" "}
-              <span className="font-semibold">
-                {isOwner && <span className="mr-1 text-yellow-500">👑</span>}
-                {msg.sender.username}:
-              </span>
-              <div className="mt-1 ml-2 space-y-2">
+              {/* HEADER */}
+
+              <div className="min-w-0 wrap-break-word">
+                <span className="font-mono text-xs font-bold sm:text-sm">
+                  [{new Date(msg.createdAt).toLocaleTimeString()}]
+                </span>{" "}
+                <span className="font-semibold break-all">
+                  {isOwner && <span className="mr-1 text-yellow-500">👑</span>}
+                  {msg.sender.username}:
+                </span>
+              </div>
+
+              {/* CONTENT */}
+
+              <div className="mt-1 ml-1 min-w-0 space-y-2 sm:ml-2">
                 {parts.map((part, index) => {
                   // NORMAL TEXT
+
                   if (part.type === "text") {
                     return (
                       <p
                         key={index}
-                        className="break-words whitespace-pre-wrap"
+                        className="wrap-break-word whitespace-pre-wrap"
                       >
                         {parseMentions(part.content).map(
                           (segment, segmentIndex) => {
@@ -199,7 +207,7 @@ export const Messages = ({ activeRoom }) => {
                                 return (
                                   <span
                                     key={segmentIndex}
-                                    className={`rounded px-1 font-semibold ${
+                                    className={`rounded px-1 font-semibold break-all ${
                                       isMe
                                         ? "bg-cyan-300 text-cyan-950"
                                         : "bg-cyan-100 text-cyan-900"
@@ -211,8 +219,6 @@ export const Messages = ({ activeRoom }) => {
                               }
                             }
 
-                            // NORMAL TEXT
-
                             return (
                               <span key={segmentIndex}>{segment.content}</span>
                             );
@@ -222,15 +228,18 @@ export const Messages = ({ activeRoom }) => {
                     );
                   }
 
-                  // CODE / ASCII BLOCK
+                  // CODE BLOCK
+
                   if (part.type === "code") {
                     return (
                       <div
                         key={index}
                         className="overflow-hidden rounded-md border-2 border-black/80 bg-black"
                       >
-                        <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-                          <div className="font-mono text-[11px] text-green-400 uppercase">
+                        {/* HEADER */}
+
+                        <div className="flex items-center justify-between gap-2 border-b border-white/10 px-2 py-2 sm:px-3">
+                          <div className="min-w-0 truncate font-mono text-[10px] text-green-400 uppercase sm:text-[11px]">
                             {part.language || "text"}
                           </div>
 
@@ -238,7 +247,7 @@ export const Messages = ({ activeRoom }) => {
                             onClick={() =>
                               copyCodeBlock(part.content, `${msg._id}-${index}`)
                             }
-                            className="cursor-pointer px-2 py-1 font-mono text-[10px] text-green-300 uppercase transition hover:bg-green-400/10"
+                            className="shrink-0 cursor-pointer px-2 py-1 font-mono text-[10px] text-green-300 uppercase transition hover:bg-green-400/10"
                           >
                             {copiedBlock === `${msg._id}-${index}`
                               ? "[ Copied! ]"
@@ -247,7 +256,7 @@ export const Messages = ({ activeRoom }) => {
                         </div>
 
                         <div className="overflow-x-auto">
-                          <pre className="p-3 font-mono text-sm whitespace-pre text-green-300">
+                          <pre className="p-3 font-mono text-xs whitespace-pre text-green-300 sm:text-sm">
                             {part.content}
                           </pre>
                         </div>
@@ -264,7 +273,7 @@ export const Messages = ({ activeRoom }) => {
       </div>
 
       {usersTyping.length > 0 && (
-        <div className="mt-4 font-mono text-xs text-black/60">
+        <div className="mt-4 font-mono text-xs wrap-break-word text-black/60">
           {usersTyping.map((u) => u.username).join(", ")} typing...
         </div>
       )}

@@ -9,6 +9,7 @@ export const Sidebar = ({
   roomsError,
   joinRoom,
   onShowCreate,
+  onCloseMobile,
 }) => {
   const { user, logout } = useAuth();
 
@@ -32,6 +33,8 @@ export const Sidebar = ({
     }
 
     joinRoom(room.name);
+
+    onCloseMobile?.();
   };
 
   const handlePrivateJoin = () => {
@@ -45,6 +48,8 @@ export const Sidebar = ({
     });
 
     setPassword("");
+
+    onCloseMobile?.();
   };
 
   const closePasswordModal = () => {
@@ -57,13 +62,26 @@ export const Sidebar = ({
   };
 
   return (
-    <aside className="flex w-64 flex-col border-r-4 border-black/90 p-4">
+    <aside className="flex h-full flex-col border-r-4 border-black/90 bg-[#fff9f1] p-4">
       {/* HEADER */}
 
-      <h1 className="mb-2 font-mono text-xl tracking-wider">{"// ROOMS //"}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-mono text-lg tracking-wider sm:text-xl">
+          {"// ROOMS //"}
+        </h1>
 
-      <div className="mb-4 flex items-center gap-3">
-        <div className="inline-block h-4 w-12 bg-black" />
+        {/* MOBILE CLOSE */}
+
+        <button
+          onClick={onCloseMobile}
+          className="flex h-9 w-9 items-center justify-center border-2 border-black/90 bg-white text-lg lg:hidden"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="mt-2 mb-4 flex items-center gap-3">
+        <div className="inline-block h-4 w-12 shrink-0 bg-black" />
 
         <div className="h-4 flex-1 bg-linear-to-r from-[#ff6b6b] via-[#ffd166] to-[#6bf0ff] opacity-90" />
       </div>
@@ -75,12 +93,12 @@ export const Sidebar = ({
           Logged in as
         </p>
 
-        <div className="mt-1 flex items-center justify-between">
-          <p className="overflow-hidden font-mono text-lg font-bold">
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <p className="truncate font-mono text-base font-bold sm:text-lg">
             {user?.username}
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
 
             <span className="font-mono text-xs font-semibold text-green-700">
@@ -119,15 +137,15 @@ export const Sidebar = ({
               <button
                 key={room._id}
                 onClick={() => handleRoomClick(room)}
-                className={`flex w-full items-center justify-between border-2 border-black/90 px-3 py-2 text-left font-mono transition-colors ${
+                className={`flex w-full items-center justify-between gap-2 border-2 border-black/90 px-3 py-2 text-left font-mono transition-colors ${
                   isActive
                     ? "bg-[#d0f5be]"
                     : "cursor-pointer hover:bg-[#c7f9cc]"
                 }`}
               >
-                <span># {room.name}</span>
+                <span className="truncate"># {room.name}</span>
 
-                {room.isPrivate && <span>🔒</span>}
+                {room.isPrivate && <span className="shrink-0">🔒</span>}
               </button>
             );
           })}

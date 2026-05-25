@@ -18,6 +18,7 @@ export const MessageInput = ({ activeRoom }) => {
   const mentionTimeoutRef = useRef(null);
   const abortRef = useRef(null);
   const isTypingRef = useRef(false);
+  const textareaRef = useRef(null);
 
   const filteredUsers = mentionUsers
     .filter((u) => u.username.toLowerCase() !== user.username.toLowerCase())
@@ -199,6 +200,15 @@ export const MessageInput = ({ activeRoom }) => {
   };
 
   useEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) return;
+
+    textarea.style.height = "0px";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [text]);
+
+  useEffect(() => {
     return () => {
       clearTimeout(typingTimeoutRef.current);
 
@@ -221,23 +231,23 @@ export const MessageInput = ({ activeRoom }) => {
 
         sendMessage();
       }}
-      className="border-t-4 border-black/90 p-4"
+      className="border-t-4 border-black/90 p-3 sm:p-4"
     >
-      <div className="relative flex gap-3">
+      <div className="relative flex items-end gap-2 sm:gap-3">
         {/* MENTION POPUP */}
 
         {showMentions && filteredUsers.length > 0 && (
-          <div className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden border-2 border-black/90 bg-white shadow-lg">
+          <div className="absolute bottom-full left-0 z-50 mb-2 max-h-60 w-full max-w-70 overflow-x-hidden overflow-y-auto border-2 border-black/90 bg-white shadow-lg sm:w-64">
             {filteredUsers.map((mentionUser, index) => (
               <button
                 key={mentionUser.username}
                 type="button"
                 onClick={() => selectMention(mentionUser.username)}
-                className={`block w-full px-3 py-2 text-left font-mono text-sm ${
+                className={`block w-full truncate px-3 py-2 text-left font-mono text-xs sm:text-sm ${
                   index === selectedMentionIndex
                     ? "bg-cyan-200"
                     : "hover:bg-cyan-50"
-                } `}
+                }`}
               >
                 @{mentionUser.username}
               </button>
@@ -246,24 +256,25 @@ export const MessageInput = ({ activeRoom }) => {
         )}
 
         <textarea
+          ref={textareaRef}
           value={text}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
           rows={1}
-          className="flex-1 resize-none border-2 border-black/90 bg-transparent px-3 py-2 font-mono text-sm focus:outline-none"
+          className="max-h-48 min-h-11 min-w-0 flex-1 resize-none overflow-y-auto border-2 border-black/90 bg-transparent px-3 py-2 font-mono text-sm leading-5 focus:outline-none"
         />
 
         <button
           type="submit"
-          className="border-4 border-black/90 bg-[#6bf0ff] px-4 py-2 text-sm font-bold uppercase transition-transform hover:-translate-y-px"
+          className="shrink-0 border-4 border-black/90 bg-[#6bf0ff] px-3 py-2 text-xs font-bold uppercase transition-transform hover:-translate-y-px sm:px-4 sm:text-sm"
         >
           Send
         </button>
       </div>
 
       {activeRoom.slowMode > 0 && (
-        <div className="mt-2 font-mono text-[11px] text-black/50">
+        <div className="mt-2 font-mono text-[10px] wrap-break-word text-black/50 sm:text-[11px]">
           Slow mode: {activeRoom.slowMode}s
         </div>
       )}

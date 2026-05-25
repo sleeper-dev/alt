@@ -2,23 +2,51 @@ import { ChatWindow } from "./ChatWindow.jsx";
 import { Sidebar } from "./Sidebar.jsx";
 import { Modal } from "../../shared/components/Modal.jsx";
 import { useChat } from "./chat.context.jsx";
+import { useState } from "react";
 
 export const ChatLayout = () => {
   const chat = useChat();
 
-  return (
-    <div className="min-h-screen bg-[#f2efe6] p-6">
-      <div className="mx-auto flex h-[90vh] max-w-6xl border-4 border-black/90 bg-[#fff9f1]">
-        <Sidebar
-          rooms={chat.rooms}
-          activeRoom={chat.activeRoom}
-          loadingRooms={chat.loadingRooms}
-          roomsError={chat.roomsError}
-          joinRoom={chat.joinRoom}
-          onShowCreate={() => chat.setShowCreateModal(true)}
-        />
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-        <ChatWindow activeRoom={chat.activeRoom} />
+  return (
+    <div className="min-h-screen bg-[#f2efe6] p-2 sm:p-4 lg:p-6">
+      <div className="mx-auto flex h-[calc(100vh-1rem)] max-h-[95vh] max-w-6xl overflow-hidden border-4 border-black/90 bg-[#fff9f1] sm:h-[calc(100vh-2rem)] lg:h-[calc(100vh-3rem)]">
+        {/* MOBILE OVERLAY */}
+
+        {sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          />
+        )}
+
+        {/* SIDEBAR */}
+
+        <div
+          className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-[#fff9f1] transition-transform duration-200 lg:static lg:z-auto lg:w-64 lg:translate-x-0 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } `}
+        >
+          <Sidebar
+            rooms={chat.rooms}
+            activeRoom={chat.activeRoom}
+            loadingRooms={chat.loadingRooms}
+            roomsError={chat.roomsError}
+            joinRoom={chat.joinRoom}
+            onShowCreate={() => chat.setShowCreateModal(true)}
+            onCloseMobile={() => setSidebarOpen(false)}
+          />
+        </div>
+
+        {/* CHAT */}
+
+        <div className="min-w-0 flex-1">
+          <ChatWindow
+            activeRoom={chat.activeRoom}
+            onOpenSidebar={() => setSidebarOpen(true)}
+          />
+        </div>
       </div>
 
       <Modal
@@ -62,7 +90,7 @@ export const ChatLayout = () => {
             />
           )}
 
-          <div className="flex justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
               onClick={() => chat.setShowCreateModal(false)}
